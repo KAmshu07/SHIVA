@@ -1,0 +1,2203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SHIVA - Scoped Hierarchical Infrastructure for Versatile Architecture</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/atom-one-dark.min.css">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="theme-switch">
+        <input type="checkbox" id="theme-toggle">
+        <label for="theme-toggle" class="toggle-label">
+            <i class="fas fa-moon"></i>
+            <i class="fas fa-sun"></i>
+            <div class="toggle-ball"></div>
+        </label>
+    </div>
+
+    <div class="progress-bar" id="reading-progress"></div>
+
+    <header>
+        <div class="logo">
+            <svg id="bus-logo" width="50" height="50" viewBox="0 0 200 200">
+                <circle cx="100" cy="100" r="90" fill="none" stroke="var(--accent-color)" stroke-width="6"/>
+                <path class="bus-path" d="M50,100 Q100,50 150,100 T50,100" fill="none" stroke="var(--accent-color)" stroke-width="6"/>
+                <circle class="node" cx="50" cy="100" r="10" fill="var(--accent-color)"/>
+                <circle class="node" cx="100" cy="50" r="10" fill="var(--accent-color)"/>
+                <circle class="node" cx="150" cy="100" r="10" fill="var(--accent-color)"/>
+                <circle class="node" cx="100" cy="150" r="10" fill="var(--accent-color)"/>
+            </svg>
+            <h1>SHIVA</h1>
+        </div>
+        <h2>Scoped Hierarchical Infrastructure for Versatile Architecture</h2>
+        <p class="subtitle">A Journey from Communication Chaos to Organized Messaging</p>
+    </header>
+
+    <div class="container">
+        <nav class="sidebar">
+            <div class="toc-header">
+                <h3>Table of Contents</h3>
+                <button id="toggle-toc" class="mobile-only"><i class="fas fa-bars"></i></button>
+            </div>
+            <ul id="toc">
+                <li><a href="#the-communication-problem" class="toc-link">The Communication Problem</a></li>
+                <li><a href="#enter-the-message-bus" class="toc-link">Enter the Message Bus</a></li>
+                <li><a href="#your-first-steps" class="toc-link">Your First Steps with SHBI</a></li>
+                <li><a href="#messages-and-events" class="toc-link">Messages and Events: The Building Blocks</a></li>
+                <li><a href="#growing-pains" class="toc-link">Growing Pains: When a Simple Bus Isn't Enough</a></li>
+                <li><a href="#introducing-scopes" class="toc-link">Introducing Scopes: Bringing Order to Chaos</a></li>
+                <li><a href="#scope-hierarchy" class="toc-link">The Scope Hierarchy: Creating Structure</a></li>
+                <li><a href="#propagation" class="toc-link">Propagation: Messages that Travel</a></li>
+                <li><a href="#access-control" class="toc-link">Access Control: Setting Boundaries</a></li>
+                <li><a href="#request-response" class="toc-link">Request-Response: Two-Way Communication</a></li>
+                <li><a href="#priority-order" class="toc-link">Priority and Order: Who Goes First</a></li>
+                <li><a href="#timing-matters" class="toc-link">Timing Matters: Async Dispatch</a></li>
+                <li><a href="#lifecycle-management" class="toc-link">Lifecycle Management: Staying Memory Safe</a></li>
+                <li><a href="#real-world-examples" class="toc-link">Real-World Examples: Putting It All Together</a></li>
+                <li><a href="#debugging-tips" class="toc-link">Debugging Tips: When Things Go Wrong</a></li>
+                <li><a href="#performance-optimization" class="toc-link">Performance Optimization: Scaling Up</a></li>
+                <li><a href="#best-practices" class="toc-link">Best Practices and Common Pitfalls</a></li>
+            </ul>
+        </nav>
+
+        <main id="content">
+            <section id="the-communication-problem">
+                <h2><i class="fas fa-exclamation-triangle section-icon"></i> The Communication Problem</h2>
+                <div class="story-block">
+                    <p>Let's start with a familiar story. You're building a game in Unity, and at first, everything seems simple. Your <code>Player</code> script needs to tell your <code>GameManager</code> that the player has collected a coin. Easy enough—just add a reference:</p>
+                </div>
+
+                <div class="code-container">
+                    <pre><code class="language-csharp">public class Player : MonoBehaviour
+{
+    public GameManager gameManager;
+    
+    private void OnTriggerEnter(Collider other)
+    {
+        if (other.CompareTag("Coin"))
+        {
+            gameManager.AddCoin();
+        }
+    }
+}</code></pre>
+                    <div class="code-actions">
+                        <button class="copy-code" title="Copy to clipboard"><i class="fas fa-copy"></i></button>
+                    </div>
+                </div>
+
+                <div class="story-block">
+                    <p>But as your game grows, the connections multiply:</p>
+                    <ul class="feature-list">
+                        <li><i class="fas fa-check-circle"></i> Your UI needs to update when coins are collected</li>
+                        <li><i class="fas fa-check-circle"></i> Sound effects need to play</li>
+                        <li><i class="fas fa-check-circle"></i> Achievements need to be tracked</li>
+                        <li><i class="fas fa-check-circle"></i> The save system needs to record the change</li>
+                        <li><i class="fas fa-check-circle"></i> Maybe an online leaderboard needs updating</li>
+                    </ul>
+                </div>
+
+                <p>Suddenly, your neat little <code>Player</code> script has references to dozen of other systems:</p>
+
+                <div class="code-container">
+                    <pre><code class="language-csharp">public class Player : MonoBehaviour
+{
+    public GameManager gameManager;
+    public UIManager uiManager;
+    public AudioManager audioManager;
+    public AchievementManager achievementManager;
+    public SaveSystem saveSystem;
+    public LeaderboardManager leaderboardManager;
+    // And the list keeps growing...
+    
+    private void OnTriggerEnter(Collider other)
+    {
+        if (other.CompareTag("Coin"))
+        {
+            gameManager.AddCoin();
+            uiManager.UpdateCoinDisplay();
+            audioManager.PlayCoinSound();
+            achievementManager.CheckCoinAchievements();
+            saveSystem.SaveGameState();
+            leaderboardManager.UpdateScore();
+        }
+    }
+}</code></pre>
+                    <div class="code-actions">
+                        <button class="copy-code" title="Copy to clipboard"><i class="fas fa-copy"></i></button>
+                    </div>
+                </div>
+
+                <div class="problem-box">
+                    <h3><i class="fas fa-exclamation-circle"></i> This approach creates several problems:</h3>
+                    <div class="problems-container">
+                        <div class="problem-item">
+                            <div class="problem-number">1</div>
+                            <div class="problem-content">
+                                <h4>Tight Coupling</h4>
+                                <p>Your <code>Player</code> class now knows about and depends on many other systems. Change one system, and you might need to update <code>Player</code> too.</p>
+                            </div>
+                        </div>
+                        <div class="problem-item">
+                            <div class="problem-number">2</div>
+                            <div class="problem-content">
+                                <h4>Initialization Order Dependency</h4>
+                                <p>All these systems must be initialized before <code>Player</code> can use them.</p>
+                            </div>
+                        </div>
+                        <div class="problem-item">
+                            <div class="problem-number">3</div>
+                            <div class="problem-content">
+                                <h4>Testing Difficulty</h4>
+                                <p>Testing <code>Player</code> in isolation becomes nearly impossible because it requires all these other systems.</p>
+                            </div>
+                        </div>
+                        <div class="problem-item">
+                            <div class="problem-number">4</div>
+                            <div class="problem-content">
+                                <h4>Maintenance Nightmare</h4>
+                                <p>As your game grows, keeping track of all these connections becomes increasingly difficult.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="story-block">
+                    <p>You might try some alternative approaches:</p>
+                </div>
+
+                <h3 class="subsection">Using Events and Delegates</h3>
+                <div class="code-container">
+                    <pre><code class="language-csharp">public class Player : MonoBehaviour
+{
+    // Define an event
+    public static event Action OnCoinCollected;
+    
+    private void OnTriggerEnter(Collider other)
+    {
+        if (other.CompareTag("Coin"))
+        {
+            // Trigger the event
+            OnCoinCollected?.Invoke();
+        }
+    }
+}
+
+// Then elsewhere:
+void Start()
+{
+    Player.OnCoinCollected += HandleCoinCollected;
+}
+
+void HandleCoinCollected()
+{
+    // React to coin collection
+}</code></pre>
+                    <div class="code-actions">
+                        <button class="copy-code" title="Copy to clipboard"><i class="fas fa-copy"></i></button>
+                    </div>
+                </div>
+
+                <div class="story-block warning">
+                    <h4><i class="fas fa-exclamation-triangle"></i> Issues with this approach:</h4>
+                    <ul>
+                        <li>Static events can cause memory leaks if not unsubscribed properly</li>
+                        <li>No control over execution order</li>
+                        <li>Difficult to debug when many systems are connected</li>
+                        <li>No built-in error handling</li>
+                    </ul>
+                </div>
+
+                <h3 class="subsection">Using Unity's SendMessage</h3>
+                <div class="code-container">
+                    <pre><code class="language-csharp">private void OnTriggerEnter(Collider other)
+{
+    if (other.CompareTag("Coin"))
+    {
+        GameObject.Find("GameManager").SendMessage("AddCoin");
+    }
+}</code></pre>
+                    <div class="code-actions">
+                        <button class="copy-code" title="Copy to clipboard"><i class="fas fa-copy"></i></button>
+                    </div>
+                </div>
+
+                <div class="story-block danger">
+                    <h4><i class="fas fa-times-circle"></i> Even worse problems:</h4>
+                    <ul>
+                        <li>Performance is poor</li>
+                        <li>No type safety</li>
+                        <li>No compile-time checking</li>
+                        <li>Still creates coupling, just in a different way</li>
+                    </ul>
+                </div>
+            </section>
+
+            <section id="enter-the-message-bus">
+                <h2><i class="fas fa-bus section-icon"></i> Enter the Message Bus</h2>
+                <div class="story-block">
+                    <p>This is where a message bus system comes to the rescue. A message bus acts as a central hub where messages are published and received, without the sender needing to know who (if anyone) is listening.</p>
+                </div>
+
+                <div class="interactive-diagram">
+                    <div class="diagram-title">The Message Bus Pattern</div>
+                    <div class="message-bus-container">
+                        <div class="publisher-container">
+                            <div class="component player-component" id="publisher-component">
+                                <div class="component-title">Player Component</div>
+                                <div class="component-action">
+                                    <button class="publish-button" id="trigger-publish">Publish</button>
+                                </div>
+                                <div class="message pulse-effect" id="message-animation">Coin Collected</div>
+                            </div>
+                        </div>
+                        <div class="bus-container">
+                            <div class="bus" id="bus-animation">
+                                <div class="bus-title">Message Bus</div>
+                                <div class="bus-track"></div>
+                            </div>
+                        </div>
+                        <div class="subscribers-container">
+                            <div class="component game-manager">
+                                <div class="component-title">Game Manager</div>
+                                <div class="component-action">
+                                    <span class="subscriber-badge">Subscriber</span>
+                                </div>
+                            </div>
+                            <div class="component ui-system">
+                                <div class="component-title">UI System</div>
+                                <div class="component-action">
+                                    <span class="subscriber-badge">Subscriber</span>
+                                </div>
+                            </div>
+                            <div class="component audio-system">
+                                <div class="component-title">Audio System</div>
+                                <div class="component-action">
+                                    <span class="subscriber-badge">Subscriber</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="diagram-caption">
+                        <p>Click the "Publish" button to see the message flow in action!</p>
+                    </div>
+                </div>
+
+                <p>Here's how the same coin collection would work with a message bus:</p>
+
+                <div class="code-container">
+                    <pre><code class="language-csharp">public class Player : MonoBehaviour
+{
+    private void OnTriggerEnter(Collider other)
+    {
+        if (other.CompareTag("Coin"))
+        {
+            // Just publish a message - no need to know who's listening
+            BusManager.MessageBus.Publish(new CoinCollectedMessage());
+        }
+    }
+}
+
+// In GameManager:
+void OnEnable()
+{
+    BusManager.MessageBus.Subscribe(OnCoinCollected);
+}
+
+void OnDisable()
+{
+    BusManager.MessageBus.Unsubscribe(OnCoinCollected);
+}
+
+void OnCoinCollected(CoinCollectedMessage message)
+{
+    // Handle coin collection
+    AddCoin();
+}
+
+// Similarly in UIManager, AudioManager, etc.</code></pre>
+                    <div class="code-actions">
+                        <button class="copy-code" title="Copy to clipboard"><i class="fas fa-copy"></i></button>
+                    </div>
+                </div>
+
+                <div class="benefits-box">
+                    <h3><i class="fas fa-star"></i> This provides several advantages:</h3>
+                    <div class="benefits-container">
+                        <div class="benefit-item">
+                            <div class="benefit-icon">
+                                <i class="fas fa-plug"></i>
+                            </div>
+                            <div class="benefit-content">
+                                <h4>Decoupling</h4>
+                                <p>The <code>Player</code> doesn't need to know who's interested in coin collection events</p>
+                            </div>
+                        </div>
+                        <div class="benefit-item">
+                            <div class="benefit-icon">
+                                <i class="fas fa-wind"></i>
+                            </div>
+                            <div class="benefit-content">
+                                <h4>Flexibility</h4>
+                                <p>New systems can start listening for coin collections without modifying <code>Player</code></p>
+                            </div>
+                        </div>
+                        <div class="benefit-item">
+                            <div class="benefit-icon">
+                                <i class="fas fa-vial"></i>
+                            </div>
+                            <div class="benefit-content">
+                                <h4>Testability</h4>
+                                <p>Each component can be tested in isolation</p>
+                            </div>
+                        </div>
+                        <div class="benefit-item">
+                            <div class="benefit-icon">
+                                <i class="fas fa-tools"></i>
+                            </div>
+                            <div class="benefit-content">
+                                <h4>Maintainability</h4>
+                                <p>The code is cleaner and easier to understand</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="story-block highlight">
+                    <p>This is where our Scoped Hierarchical Infrastructure for Versatile Architecture (SHIVA) comes in - a powerful, flexible message bus system designed specifically for Unity applications.</p>
+                </div>
+            </section>
+
+            <section id="your-first-steps">
+                <h2><i class="fas fa-shoe-prints section-icon"></i> Your First Steps with SHBI</h2>
+                <div class="story-block">
+                    <p>Let's start with the simplest possible example. First, we need to define a message:</p>
+                </div>
+
+                <div class="code-container">
+                    <pre><code class="language-csharp">// A simple message with no additional data
+public class GameStartedMessage : BaseMessage
+{
+    // BaseMessage provides basic functionality like message ID
+    public GameStartedMessage() : base() { }
+}
+
+// A message with data
+public class PlayerMovedMessage : BaseMessage
+{
+    // Include any data that subscribers might need
+    public Vector3 NewPosition { get; }
+    public float Speed { get; }
+    
+    public PlayerMovedMessage(Vector3 newPosition, float speed) : base()
+    {
+        NewPosition = newPosition;
+        Speed = speed;
+    }
+}</code></pre>
+                    <div class="code-actions">
+                        <button class="copy-code" title="Copy to clipboard"><i class="fas fa-copy"></i></button>
+                    </div>
+                </div>
+
+                <p>Next, let's publish a message when the game starts:</p>
+
+                <div class="code-container">
+                    <pre><code class="language-csharp">public class GameManager : MonoBehaviour
+{
+    private void Start()
+    {
+        // Tell everyone the game has started
+        BusManager.MessageBus.Publish(new GameStartedMessage());
+    }
+}</code></pre>
+                    <div class="code-actions">
+                        <button class="copy-code" title="Copy to clipboard"><i class="fas fa-copy"></i></button>
+                    </div>
+                </div>
+
+                <p>And finally, let's have another component listen for that message:</p>
+
+                <div class="code-container">
+                    <pre><code class="language-csharp">public class PlayerController : MonoBehaviour
+{
+    private void OnEnable()
+    {
+        // Start listening for game start messages
+        BusManager.MessageBus.Subscribe(OnGameStarted);
+    }
+    
+    private void OnDisable()
+    {
+        // IMPORTANT: Always unsubscribe when disabled
+        BusManager.MessageBus.Unsubscribe(OnGameStarted);
+    }
+    
+    private void OnGameStarted(GameStartedMessage message)
+    {
+        // React to game starting
+        Debug.Log("Game started! Player is ready to go.");
+        // Initialize player, etc.
+    }
+}</code></pre>
+                    <div class="code-actions">
+                        <button class="copy-code" title="Copy to clipboard"><i class="fas fa-copy"></i></button>
+                    </div>
+                </div>
+
+                <div class="story-block success pulse-once">
+                    <h4><i class="fas fa-check-circle"></i> Success!</h4>
+                    <p>That's it! You've just implemented your first message bus communication. The <code>GameManager</code> doesn't need to know about the <code>PlayerController</code>, and the <code>PlayerController</code> doesn't need a reference to the <code>GameManager</code>. They communicate through messages.</p>
+                </div>
+            </section>
+
+            <section id="messages-and-events">
+                <h2><i class="fas fa-envelope section-icon"></i> Messages and Events: The Building Blocks</h2>
+                <div class="story-block">
+                    <p>In the SHIVA system, we distinguish between two types of communications:</p>
+                </div>
+
+                <div class="comparison-table">
+                    <div class="comparison-item">
+                        <div class="comparison-header">
+                            <i class="fas fa-envelope"></i>
+                            <h3>Messages</h3>
+                        </div>
+                        <div class="comparison-content">
+                            <p>Used for standard communications, can potentially have responses</p>
+                        </div>
+                    </div>
+                    <div class="comparison-item">
+                        <div class="comparison-header">
+                            <i class="fas fa-bell"></i>
+                            <h3>Events</h3>
+                        </div>
+                        <div class="comparison-content">
+                            <p>Used for one-way notifications, never have responses</p>
+                        </div>
+                    </div>
+                </div>
+
+                <p>This distinction helps keep your communication patterns clear and organized.</p>
+
+                <h3 class="subsection">Message Types</h3>
+                <p>The SHBI system provides several base message types:</p>
+                <ol>
+                    <li><code>BaseMessage</code>: The simplest message type with basic functionality</li>
+                    <li><code>ScopedMessage</code>: A message that contains scope and propagation information (more on this later)</li>
+                </ol>
+
+                <p>Let's define examples of each:</p>
+
+                <div class="code-container">
+                    <pre><code class="language-csharp">// Simple base message
+public class PlayerJumpedMessage : BaseMessage
+{
+    public float JumpHeight { get; }
+    
+    public PlayerJumpedMessage(float jumpHeight) : base()
+    {
+        JumpHeight = jumpHeight;
+    }
+}
+
+// We'll learn about scoped messages soon!</code></pre>
+                    <div class="code-actions">
+                        <button class="copy-code" title="Copy to clipboard"><i class="fas fa-copy"></i></button>
+                    </div>
+                </div>
+
+                <h3 class="subsection">Event Types</h3>
+                <p>Similarly, there are base event types:</p>
+                <ol>
+                    <li><code>BaseEvent</code>: Simple event with a timestamp</li>
+                    <li><code>ScopedEvent</code>: Event with scope and propagation information</li>
+                </ol>
+
+                <p>Here's how to define events:</p>
+
+                <div class="code-container">
+                    <pre><code class="language-csharp">// Simple base event
+public class GameTickEvent : BaseEvent
+{
+    public int TickNumber { get; }
+    
+    public GameTickEvent(int tickNumber) : base()
+    {
+        TickNumber = tickNumber;
+    }
+}</code></pre>
+                    <div class="code-actions">
+                        <button class="copy-code" title="Copy to clipboard"><i class="fas fa-copy"></i></button>
+                    </div>
+                </div>
+
+                <div class="usage-guide">
+                    <h3><i class="fas fa-book"></i> When to Use Messages vs Events</h3>
+                    <div class="usage-columns">
+                        <div class="usage-column">
+                            <h4><i class="fas fa-envelope"></i> Use <strong>messages</strong> when:</h4>
+                            <ul>
+                                <li>You might need a response</li>
+                                <li>You're sending specific commands or requests</li>
+                                <li>You want to communicate specific game actions</li>
+                            </ul>
+                        </div>
+                        <div class="usage-column">
+                            <h4><i class="fas fa-bell"></i> Use <strong>events</strong> when:</h4>
+                            <ul>
+                                <li>You're simply notifying others something happened</li>
+                                <li>No response is expected</li>
+                                <li>The communication is purely informational</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="usage-examples">
+                        <p><strong>Examples:</strong></p>
+                        <ul>
+                            <li>"Player jumped" is a good event - it's just information</li>
+                            <li>"Open inventory" is a good message - it's a command that might require a response</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <h3 class="subsection">Using the Event Bus</h3>
+                <p>The SHBI system provides separate buses for messages and events:</p>
+
+                <div class="code-container">
+                    <pre><code class="language-csharp">// Publishing an event
+BusManager.EventBus.Publish(new GameTickEvent(currentTick));
+
+// Subscribing to an event
+BusManager.EventBus.Subscribe(OnGameTick);
+
+// Don't forget to unsubscribe
+BusManager.EventBus.Unsubscribe(OnGameTick);</code></pre>
+                    <div class="code-actions">
+                        <button class="copy-code" title="Copy to clipboard"><i class="fas fa-copy"></i></button>
+                    </div>
+                </div>
+
+                <div class="story-block info">
+                    <p>This separation keeps your message and event handling clean and organized.</p>
+                </div>
+            </section>
+
+            <section id="growing-pains">
+                <h2><i class="fas fa-chart-line section-icon"></i> Growing Pains: When a Simple Bus Isn't Enough</h2>
+                <div class="story-block">
+                    <p>As your project grows, you'll start to encounter new challenges with a simple message bus approach:</p>
+                </div>
+
+                <div class="accordion">
+                    <div class="accordion-item">
+                        <div class="accordion-header">
+                            <h3>Problem 1: Message Overload</h3>
+                            <span class="accordion-icon"><i class="fas fa-plus"></i><i class="fas fa-minus"></i></span>
+                        </div>
+                        <div class="accordion-content">
+                            <p>With dozens or hundreds of different message types flowing through a single bus, it becomes difficult to:</p>
+                            <ul>
+                                <li>Track which systems are publishing which messages</li>
+                                <li>Ensure messages are only received by relevant systems</li>
+                                <li>Debug issues when messages aren't being received as expected</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="accordion-item">
+                        <div class="accordion-header">
+                            <h3>Problem 2: Performance Concerns</h3>
+                            <span class="accordion-icon"><i class="fas fa-plus"></i><i class="fas fa-minus"></i></span>
+                        </div>
+                        <div class="accordion-content">
+                            <p>When every message is sent to every subscriber, regardless of relevance, you may encounter performance issues:</p>
+                            <ul>
+                                <li>UI-specific messages reaching gameplay systems that don't need them</li>
+                                <li>Network messages being processed by local-only components</li>
+                                <li>High-frequency messages (like physics updates) being sent to systems that only need occasional updates</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="accordion-item">
+                        <div class="accordion-header">
+                            <h3>Problem 3: Access Control</h3>
+                            <span class="accordion-icon"><i class="fas fa-plus"></i><i class="fas fa-minus"></i></span>
+                        </div>
+                        <div class="accordion-content">
+                            <p>In a team environment, you may want to restrict which parts of your codebase can:</p>
+                            <ul>
+                                <li>Publish specific types of messages</li>
+                                <li>Listen to certain critical messages</li>
+                                <li>Respond to sensitive communications</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="accordion-item">
+                        <div class="accordion-header">
+                            <h3>Problem 4: Message Flow Control</h3>
+                            <span class="accordion-icon"><i class="fas fa-plus"></i><i class="fas fa-minus"></i></span>
+                        </div>
+                        <div class="accordion-content">
+                            <p>As your application's architecture gets more complex, you might want messages to:</p>
+                            <ul>
+                                <li>Stay within specific subsystems</li>
+                                <li>Propagate up to parent systems but not down to child systems</li>
+                                <li>Flow down to subsystems but not up to parent systems</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="story-block highlight">
+                    <p>These growing pains point to the need for a more sophisticated approach. This is where the "Scoped" and "Hierarchical" parts of SHBI come into play.</p>
+                </div>
+            </section>
+
+            <section id="introducing-scopes">
+                <h2><i class="fas fa-sitemap section-icon"></i> Introducing Scopes: Bringing Order to Chaos</h2>
+                <div class="story-block">
+                    <p>A scope in SHBI represents a logical domain or area of your application. Think of it as a dedicated communication channel for a specific part of your application.</p>
+                </div>
+
+                <div class="scope-visualization">
+                    <div class="scope-title">Predefined Scopes</div>
+                    <div class="scope-items">
+                        <div class="scope-item" data-scope="global">
+                            <div class="scope-icon"><i class="fas fa-globe"></i></div>
+                            <div class="scope-name">Global</div>
+                            <div class="scope-desc">Application-wide communication</div>
+                        </div>
+                        <div class="scope-item" data-scope="core">
+                            <div class="scope-icon"><i class="fas fa-cog"></i></div>
+                            <div class="scope-name">Core</div>
+                            <div class="scope-desc">Core game systems</div>
+                        </div>
+                        <div class="scope-item" data-scope="ui">
+                            <div class="scope-icon"><i class="fas fa-desktop"></i></div>
+                            <div class="scope-name">UI</div>
+                            <div class="scope-desc">User interface components</div>
+                        </div>
+                        <div class="scope-item" data-scope="networking">
+                            <div class="scope-icon"><i class="fas fa-network-wired"></i></div>
+                            <div class="scope-name">Networking</div>
+                            <div class="scope-desc">Network-related communications</div>
+                        </div>
+                    </div>
+                </div>
+
+                <p>Let's see how to use scoped communication:</p>
+
+                <div class="code-container">
+                    <pre><code class="language-csharp">// Get the UI bus specifically
+var uiBus = BusManager.GetMessageBus(BusScope.UI);
+
+// Subscribe to UI-specific messages
+uiBus.Subscribe(OnWindowOpened);
+
+// Publish to the UI bus
+uiBus.Publish(new WindowOpenedMessage("MainMenu"));</code></pre>
+                    <div class="code-actions">
+                        <button class="copy-code" title="Copy to clipboard"><i class="fas fa-copy"></i></button>
+                    </div>
+                </div>
+
+                <div class="benefits-compact">
+                    <h3>By using scoped communication, you:</h3>
+                    <ul>
+                        <li><i class="fas fa-minus-circle"></i> Reduce noise by keeping messages in relevant domains</li>
+                        <li><i class="fas fa-tachometer-alt"></i> Improve performance by only processing messages in the appropriate scope</li>
+                        <li><i class="fas fa-bug"></i> Make debugging easier by clearly seeing which scope a message belongs to</li>
+                    </ul>
+                </div>
+
+                <h3 class="subsection">Creating Custom Scopes</h3>
+                <div class="story-block">
+                    <p>You can also create your own custom scopes for specific parts of your application:</p>
+                </div>
+
+                <div class="code-container">
+                    <pre><code class="language-csharp">// Create a custom gameplay scope as a child of the Core scope
+var gameplayScope = BusManager.CreateScope("Gameplay", BusScope.Core);
+
+// Get the bus for this scope
+var gameplayBus = BusManager.GetMessageBus(gameplayScope);
+
+// Use it like any other bus
+gameplayBus.Subscribe(OnEnemySpawned);
+gameplayBus.Publish(new EnemySpawnedMessage(enemyType, position));</code></pre>
+                    <div class="code-actions">
+                        <button class="copy-code" title="Copy to clipboard"><i class="fas fa-copy"></i></button>
+                    </div>
+                </div>
+
+                <div class="story-block info">
+                    <p>Custom scopes let you organize your communication in a way that matches your application's architecture.</p>
+                </div>
+            </section>
+
+            <section id="scope-hierarchy">
+                <h2><i class="fas fa-project-diagram section-icon"></i> The Scope Hierarchy: Creating Structure</h2>
+                <div class="story-block">
+                    <p>Scopes in SHBI aren't just separate channels - they're organized in a hierarchical structure. Each scope (except the Global scope) has a parent scope:</p>
+                </div>
+
+                <div class="scope-hierarchy-viz" id="scope-hierarchy-viz">
+                    <div class="hierarchy-node global">
+                        <div class="node-content">
+                            <div class="node-icon"><i class="fas fa-globe"></i></div>
+                            <div class="node-name">Global</div>
+                        </div>
+                        <div class="node-children">
+                            <div class="hierarchy-node core">
+                                <div class="node-content">
+                                    <div class="node-icon"><i class="fas fa-cog"></i></div>
+                                    <div class="node-name">Core</div>
+                                </div>
+                                <div class="node-children">
+                                    <div class="hierarchy-node gameplay">
+                                        <div class="node-content">
+                                            <div class="node-icon"><i class="fas fa-gamepad"></i></div>
+                                            <div class="node-name">Gameplay</div>
+                                        </div>
+                                    </div>
+                                    <div class="hierarchy-node ai">
+                                        <div class="node-content">
+                                            <div class="node-icon"><i class="fas fa-robot"></i></div>
+                                            <div class="node-name">AI</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="hierarchy-node ui">
+                                <div class="node-content">
+                                    <div class="node-icon"><i class="fas fa-desktop"></i></div>
+                                    <div class="node-name">UI</div>
+                                </div>
+                            </div>
+                            <div class="hierarchy-node networking">
+                                <div class="node-content">
+                                    <div class="node-icon"><i class="fas fa-network-wired"></i></div>
+                                    <div class="node-name">Networking</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="story-block">
+                    <p>This hierarchy provides a logical organization that often mirrors your application's architecture. But it also enables an important feature: message propagation.</p>
+                </div>
+
+                <h3 class="subsection">Creating Parent-Child Relationships</h3>
+                <p>When creating scopes, you specify the parent:</p>
+
+                <div class="code-container">
+                    <pre><code class="language-csharp">// Create the hierarchy
+var aiScope = BusManager.CreateScope("AI", BusScope.Core);
+var enemyAiScope = BusManager.CreateScope("EnemyAI", aiScope);
+var bossAiScope = BusManager.CreateScope("BossAI", aiScope);</code></pre>
+                    <div class="code-actions">
+                        <button class="copy-code" title="Copy to clipboard"><i class="fas fa-copy"></i></button>
+                    </div>
+                </div>
+
+                <h3 class="subsection">Accessing Buses Correctly</h3>
+                <p>To get the appropriate bus for a scope:</p>
+
+                <div class="code-container">
+                    <pre><code class="language-csharp">// Get the bus for the AI scope
+var aiBus = BusManager.GetMessageBus(aiScope);
+
+// Get the event bus for the UI scope
+var uiEventBus = BusManager.GetEventBus(BusScope.UI);</code></pre>
+                    <div class="code-actions">
+                        <button class="copy-code" title="Copy to clipboard"><i class="fas fa-copy"></i></button>
+                    </div>
+                </div>
+
+                <h3 class="subsection">Understanding Bus Relationships</h3>
+                <div class="story-block">
+                    <p>The parent-child relationships between scopes extend to their buses. When you create a bus for a child scope, it has a reference to its parent scope's bus:</p>
+                </div>
+
+                <div class="code-container">
+                    <pre><code class="language-csharp">// This creates a parent-child relationship between buses
+var parentBus = BusManager.GetMessageBus(parentScope);
+var childBus = BusManager.GetMessageBus(childScope);</code></pre>
+                    <div class="code-actions">
+                        <button class="copy-code" title="Copy to clipboard"><i class="fas fa-copy"></i></button>
+                    </div>
+                </div>
+
+                <div class="story-block highlight">
+                    <p>This parent-child relationship is crucial for message propagation, which we'll discuss next.</p>
+                </div>
+            </section>
+
+            <section id="propagation">
+                <h2><i class="fas fa-broadcast-tower section-icon"></i> Propagation: Messages that Travel</h2>
+                <div class="story-block">
+                    <p>By default, messages stay within their scope - when you publish a message to the UI bus, only subscribers to the UI bus receive it. But what if you want messages to travel up or down the scope hierarchy?</p>
+                </div>
+
+                <p>This is where scoped messages and propagation behavior come in:</p>
+
+                <div class="code-container">
+                    <pre><code class="language-csharp">// Define a scoped message with propagation behavior
+public class PlayerDiedMessage : ScopedMessage
+{
+    public string PlayerName { get; }
+    
+    public PlayerDiedMessage(string playerName, BusScope scope, 
+                            PropagationBehavior propagation = PropagationBehavior.Local)
+        : base(scope, propagation)
+    {
+        PlayerName = playerName;
+    }
+}
+
+// Publishing with upward propagation
+var gameplayBus = BusManager.GetMessageBus(gameplayScope);
+gameplayBus.Publish(new PlayerDiedMessage("Player1", gameplayScope, PropagationBehavior.UpToParent));</code></pre>
+                    <div class="code-actions">
+                        <button class="copy-code" title="Copy to clipboard"><i class="fas fa-copy"></i></button>
+                    </div>
+                </div>
+
+                <h3 class="subsection">Propagation Behaviors</h3>
+                <div class="propagation-behaviors">
+                    <div class="prop-behavior" data-behavior="local">
+                        <div class="prop-icon"><i class="fas fa-dot-circle"></i></div>
+                        <div class="prop-name">Local</div>
+                        <div class="prop-desc">The message stays within its scope (default)</div>
+                    </div>
+                    <div class="prop-behavior" data-behavior="up">
+                        <div class="prop-icon"><i class="fas fa-arrow-up"></i></div>
+                        <div class="prop-name">UpToParent</div>
+                        <div class="prop-desc">The message propagates up to the parent scope</div>
+                    </div>
+                    <div class="prop-behavior" data-behavior="down">
+                        <div class="prop-icon"><i class="fas fa-arrow-down"></i></div>
+                        <div class="prop-name">DownToChildren</div>
+                        <div class="prop-desc">The message propagates down to child scopes</div>
+                    </div>
+                    <div class="prop-behavior" data-behavior="updown">
+                        <div class="prop-icon"><i class="fas fa-arrows-alt-v"></i></div>
+                        <div class="prop-name">UpAndDown</div>
+                        <div class="prop-desc">The message propagates both up and down</div>
+                    </div>
+                </div>
+
+                <div class="propagation-viz" id="propagation-viz">
+                    <div class="prop-viz-title">Click a behavior to see propagation in action:</div>
+                    <div class="prop-viz-container">
+                        <div class="prop-hierarchy scope-hierarchy-viz">
+                            <div class="hierarchy-node global">
+                                <div class="node-content" id="global-node">
+                                    <div class="node-icon"><i class="fas fa-globe"></i></div>
+                                    <div class="node-name">Global</div>
+                                </div>
+                                <div class="node-children">
+                                    <div class="hierarchy-node core">
+                                        <div class="node-content" id="core-node">
+                                            <div class="node-icon"><i class="fas fa-cog"></i></div>
+                                            <div class="node-name">Core</div>
+                                        </div>
+                                        <div class="node-children">
+                                            <div class="hierarchy-node gameplay">
+                                                <div class="node-content" id="gameplay-node">
+                                                    <div class="node-icon"><i class="fas fa-gamepad"></i></div>
+                                                    <div class="node-name">Gameplay</div>
+                                                </div>
+                                            </div>
+                                            <div class="hierarchy-node ai">
+                                                <div class="node-content" id="ai-node">
+                                                    <div class="node-icon"><i class="fas fa-robot"></i></div>
+                                                    <div class="node-name">AI</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="hierarchy-node ui">
+                                        <div class="node-content" id="ui-node">
+                                            <div class="node-icon"><i class="fas fa-desktop"></i></div>
+                                            <div class="node-name">UI</div>
+                                        </div>
+                                    </div>
+                                    <div class="hierarchy-node networking">
+                                        <div class="node-content" id="networking-node">
+                                            <div class="node-icon"><i class="fas fa-network-wired"></i></div>
+                                            <div class="node-name">Networking</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="prop-controls">
+                            <button class="prop-button" data-prop="local" id="local-btn">Local</button>
+                            <button class="prop-button" data-prop="up" id="up-btn">UpToParent</button>
+                            <button class="prop-button" data-prop="down" id="down-btn">DownToChildren</button>
+                            <button class="prop-button" data-prop="updown" id="updown-btn">UpAndDown</button>
+                        </div>
+                    </div>
+                </div>
+
+                <h3 class="subsection">Propagation Scenarios</h3>
+                <div class="story-block">
+                    <p>Let's look at some examples of when to use different propagation behaviors:</p>
+                </div>
+
+                <h4>Local Propagation</h4>
+                <div class="code-container">
+                    <pre><code class="language-csharp">// UI-specific message that doesn't need to go elsewhere
+uiBus.Publish(new ButtonClickedMessage("StartButton", BusScope.UI, PropagationBehavior.Local));</code></pre>
+                    <div class="code-actions">
+                        <button class="copy-code" title="Copy to clipboard"><i class="fas fa-copy"></i></button>
+                    </div>
+                </div>
+                <p>Use local propagation for messages that are only relevant within their specific domain.</p>
+
+                <h4>Upward Propagation</h4>
+                <div class="code-container">
+                    <pre><code class="language-csharp">// Gameplay event that Core systems might need to know about
+gameplayBus.Publish(new LevelCompletedMessage(levelId, gameplayScope, PropagationBehavior.UpToParent));</code></pre>
+                    <div class="code-actions">
+                        <button class="copy-code" title="Copy to clipboard"><i class="fas fa-copy"></i></button>
+                    </div>
+                </div>
+                <p>Use upward propagation when child systems need to inform parent systems about important events.</p>
+
+                <h4>Downward Propagation</h4>
+                <div class="code-container">
+                    <pre><code class="language-csharp">// Core system broadcasting to all gameplay subsystems
+coreBus.Publish(new GamePausedMessage(isPaused, BusScope.Core, PropagationBehavior.DownToChildren));</code></pre>
+                    <div class="code-actions">
+                        <button class="copy-code" title="Copy to clipboard"><i class="fas fa-copy"></i></button>
+                    </div>
+                </div>
+                <p>Use downward propagation when parent systems need to broadcast information to all child systems.</p>
+
+                <h4>Up and Down Propagation</h4>
+                <div class="code-container">
+                    <pre><code class="language-csharp">// Critical message that needs to reach the entire hierarchy
+coreBus.Publish(new GameOverMessage(score, BusScope.Core, PropagationBehavior.UpAndDown));</code></pre>
+                    <div class="code-actions">
+                        <button class="copy-code" title="Copy to clipboard"><i class="fas fa-copy"></i></button>
+                    </div>
+                </div>
+                <p>Use up and down propagation sparingly, for truly critical messages that need to reach every part of your application.</p>
+
+                <div class="critical-rule">
+                    <div class="critical-header">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <h3>Critical Rule for Propagation</h3>
+                    </div>
+                    <div class="critical-content">
+                        <p>There's one absolutely essential rule to understand about propagation:</p>
+                        <div class="critical-quote">
+                            <p>Messages only propagate if the message's scope exactly matches the bus's scope</p>
+                        </div>
+                        <p>This means:</p>
+                        <div class="code-container">
+                            <pre><code class="language-csharp">// This will propagate correctly because the scope matches the bus
+gameplayBus.Publish(new PlayerDiedMessage("Player1", gameplayScope, PropagationBehavior.UpToParent));
+
+// This will NOT propagate because the scope doesn't match the bus
+gameplayBus.Publish(new PlayerDiedMessage("Player1", BusScope.UI, PropagationBehavior.UpToParent));</code></pre>
+                        </div>
+                        <p>This rule is crucial for preventing unintended propagation and keeping your message flow controlled.</p>
+                    </div>
+                </div>
+            </section>
+
+            <section id="access-control">
+                <h2><i class="fas fa-user-shield section-icon"></i> Access Control: Setting Boundaries</h2>
+                <div class="story-block">
+                    <p>As your project grows and team size increases, you might want to control which parts of your code can access specific buses. SHBI provides a built-in access control system:</p>
+                </div>
+
+                <div class="code-container">
+                    <pre><code class="language-csharp">// Register access rights for an assembly
+BusManager.RegisterAccess(Assembly.GetExecutingAssembly(), BusScope.UI, BusAccessLevel.ReadWrite);</code></pre>
+                    <div class="code-actions">
+                        <button class="copy-code" title="Copy to clipboard"><i class="fas fa-copy"></i></button>
+                    </div>
+                </div>
+
+                <h3 class="subsection">Access Levels</h3>
+                <div class="access-levels">
+                    <div class="access-level">
+                        <div class="access-icon"><i class="fas fa-ban"></i></div>
+                        <div class="access-name">None</div>
+                        <div class="access-desc">No access to the bus</div>
+                    </div>
+                    <div class="access-level">
+                        <div class="access-icon"><i class="fas fa-glasses"></i></div>
+                        <div class="access-name">ReadOnly</div>
+                        <div class="access-desc">Can subscribe but not publish</div>
+                    </div>
+                    <div class="access-level">
+                        <div class="access-icon"><i class="fas fa-pencil-alt"></i></div>
+                        <div class="access-name">WriteOnly</div>
+                        <div class="access-desc">Can publish but not subscribe</div>
+                    </div>
+                    <div class="access-level">
+                        <div class="access-icon"><i class="fas fa-check-double"></i></div>
+                        <div class="access-name">ReadWrite</div>
+                        <div class="access-desc">Full access to the bus</div>
+                    </div>
+                </div>
+
+                <h3 class="subsection">Practical Examples</h3>
+                <div class="story-block">
+                    <p>Here's how you might configure access rights in a real application:</p>
+                </div>
+
+                <div class="code-container">
+                    <pre><code class="language-csharp">// UI assembly gets full access to UI scope, but only read access to Core
+BusManager.RegisterAccess(typeof(UIManager).Assembly, BusScope.UI, BusAccessLevel.ReadWrite);
+BusManager.RegisterAccess(typeof(UIManager).Assembly, BusScope.Core, BusAccessLevel.ReadOnly);
+
+// Networking assembly gets full access to Networking scope, but limited access elsewhere
+BusManager.RegisterAccess(typeof(NetworkManager).Assembly, BusScope.Networking, BusAccessLevel.ReadWrite);
+BusManager.RegisterAccess(typeof(NetworkManager).Assembly, BusScope.Global, BusAccessLevel.ReadOnly);</code></pre>
+                    <div class="code-actions">
+                        <button class="copy-code" title="Copy to clipboard"><i class="fas fa-copy"></i></button>
+                    </div>
+                </div>
+
+                <div class="story-block info">
+                    <p>This helps enforce architectural boundaries and prevents unintended cross-system dependencies.</p>
+                </div>
+            </section>
+
+            <section id="request-response">
+                <h2><i class="fas fa-exchange-alt section-icon"></i> Request-Response: Two-Way Communication</h2>
+                <div class="story-block">
+                    <p>So far, we've mostly dealt with one-way communication - publishing messages without expecting a direct response. But sometimes you need two-way communication, such as:</p>
+                    <ul>
+                        <li>Requesting player data from a database</li>
+                        <li>Checking if an inventory has a specific item</li>
+                        <li>Requesting permission to perform an action</li>
+                    </ul>
+                </div>
+
+                <p>SHBI provides a built-in request-response pattern:</p>
+
+                <div class="code-container">
+                    <pre><code class="language-csharp">// Define a message that requires a response
+public class PlayerDataRequest : BaseMessage
+{
+    public string PlayerId { get; }
+    
+    // Note the requiresResponse parameter set to true
+    public PlayerDataRequest(string playerId) : base(requiresResponse: true)
+    {
+        PlayerId = playerId;
+    }
+}
+
+// Handler that responds to the request
+void OnEnable()
+{
+    BusManager.MessageBus.Subscribe(HandlePlayerDataRequest);
+}
+
+void HandlePlayerDataRequest(PlayerDataRequest request)
+{
+    // Get the player data
+    var playerData = GetPlayerData(request.PlayerId);
+    
+    // Send the response
+    BusManager.MessageBus.Respond(request, playerData);
+}
+
+// Making a request and getting a response
+async void LoadPlayerData(string playerId)
+{
+    try
+    {
+        // Make the request and await the response
+        var playerData = await BusManager.MessageBus.Request(
+            new PlayerDataRequest(playerId),
+            TimeSpan.FromSeconds(5) // Timeout
+        );
+        
+        // Use the player data
+        UpdateUI(playerData);
+    }
+    catch (TimeoutException)
+    {
+        Debug.LogError("Request for player data timed out");
+    }
+}</code></pre>
+                    <div class="code-actions">
+                        <button class="copy-code" title="Copy to clipboard"><i class="fas fa-copy"></i></button>
+                    </div>
+                </div>
+
+                <div class="request-response-viz" id="request-response-viz">
+                    <div class="rr-title">Request-Response Flow</div>
+                    <div class="rr-container">
+                        <div class="rr-component requester">
+                            <div class="rr-component-title">Requester</div>
+                            <div class="rr-component-action">
+                                <button class="rr-button" id="send-request">Send Request</button>
+                            </div>
+                        </div>
+                        <div class="rr-message-path">
+                            <div class="rr-request-arrow">
+                                <div class="rr-arrow-line"></div>
+                                <div class="rr-arrow-head"></div>
+                            </div>
+                            <div class="rr-message request-message">PlayerDataRequest</div>
+                            <div class="rr-response-arrow">
+                                <div class="rr-arrow-line"></div>
+                                <div class="rr-arrow-head"></div>
+                            </div>
+                            <div class="rr-message response-message">PlayerData</div>
+                        </div>
+                        <div class="rr-component responder">
+                            <div class="rr-component-title">Responder</div>
+                            <div class="rr-component-action">
+                                <div class="rr-processing">Processing...</div>
+                                <button class="rr-button" id="send-response">Respond</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <h3 class="subsection">Timeout Handling</h3>
+                <div class="story-block">
+                    <p>Note the timeout parameter in the request. This prevents your code from hanging indefinitely if no response is received:</p>
+                </div>
+
+                <div class="code-container">
+                    <pre><code class="language-csharp">// Specify a custom timeout (default is 5 seconds)
+var response = await BusManager.MessageBus.Request(
+    request,
+    TimeSpan.FromSeconds(10) // 10-second timeout
+);</code></pre>
+                    <div class="code-actions">
+                        <button class="copy-code" title="Copy to clipboard"><i class="fas fa-copy"></i></button>
+                    </div>
+                </div>
+
+                <div class="story-block warning">
+                    <p>Always handle timeouts appropriately, especially for critical operations.</p>
+                </div>
+
+                <h3 class="subsection">Request Validation</h3>
+                <div class="story-block">
+                    <p>The SHBI system performs several validations to prevent common errors:</p>
+                </div>
+
+                <div class="code-container">
+                    <pre><code class="language-csharp">// This will throw if requiresResponse isn't set to true
+var response = await BusManager.MessageBus.Request(
+    new InvalidRequest("data") // Constructor doesn't set requiresResponse = true
+);
+
+// This will throw if no handlers are subscribed
+var response = await BusManager.MessageBus.Request(
+    new ValidRequest("data")
+);</code></pre>
+                    <div class="code-actions">
+                        <button class="copy-code" title="Copy to clipboard"><i class="fas fa-copy"></i></button>
+                    </div>
+                </div>
+
+                <div class="validation-checklist">
+                    <h4>Always ensure:</h4>
+                    <ul>
+                        <li><i class="fas fa-check"></i> Your request message has <code>requiresResponse: true</code></li>
+                        <li><i class="fas fa-check"></i> At least one handler is subscribed before making the request</li>
+                    </ul>
+                </div>
+            </section>
+
+            <section id="priority-order">
+                <h2><i class="fas fa-sort-amount-down section-icon"></i> Priority and Order: Who Goes First</h2>
+                <div class="story-block">
+                    <p>Sometimes the order in which subscribers receive messages matters. For example:</p>
+                    <ul>
+                        <li>A logger should record an event before it's processed</li>
+                        <li>A validation system should check a request before it's fulfilled</li>
+                        <li>Core systems might need to process changes before UI updates</li>
+                    </ul>
+                </div>
+
+                <p>SHBI allows you to specify a priority when subscribing:</p>
+
+                <div class="code-container">
+                    <pre><code class="language-csharp">// Higher numbers = higher priority (executed first)
+// Default priority is 0
+messageBus.Subscribe(LogGameStateChange, priority: 100);
+messageBus.Subscribe(UpdateGameSystems, priority: 50);
+messageBus.Subscribe(UpdateUI, priority: 10);</code></pre>
+                    <div class="code-actions">
+                        <button class="copy-code" title="Copy to clipboard"><i class="fas fa-copy"></i></button>
+                    </div>
+                </div>
+
+                <div class="execution-order">
+                    <div class="execution-title">With this setup, the handlers will execute in this order:</div>
+                    <div class="execution-steps">
+                        <div class="execution-step">
+                            <div class="step-number">1</div>
+                            <div class="step-content">
+                                <div class="step-name">LogGameStateChange</div>
+                                <div class="step-priority">priority 100</div>
+                            </div>
+                        </div>
+                        <div class="execution-step">
+                            <div class="step-number">2</div>
+                            <div class="step-content">
+                                <div class="step-name">UpdateGameSystems</div>
+                                <div class="step-priority">priority 50</div>
+                            </div>
+                        </div>
+                        <div class="execution-step">
+                            <div class="step-number">3</div>
+                            <div class="step-content">
+                                <div class="step-name">UpdateUI</div>
+                                <div class="step-priority">priority 10</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <h3 class="subsection">Enabling Priority Support</h3>
+                <div class="story-block">
+                    <p>Priority sorting adds a small overhead, so it's configurable:</p>
+                </div>
+
+                <div class="code-container">
+                    <pre><code class="language-csharp">// Enable priority support when creating a bus
+var bus = MessageBusBuilder.Create()
+    .WithPrioritySupport()
+    .WithScope(myScope)
+    .Build();</code></pre>
+                    <div class="code-actions">
+                        <button class="copy-code" title="Copy to clipboard"><i class="fas fa-copy"></i></button>
+                    </div>
+                </div>
+
+                <div class="story-block warning">
+                    <p>Use priorities when execution order matters, but be mindful of creating dependencies between your handlers.</p>
+                </div>
+            </section>
+
+            <section id="timing-matters">
+                <h2><i class="fas fa-clock section-icon"></i> Timing Matters: Async Dispatch</h2>
+                <div class="story-block">
+                    <p>Unity is single-threaded for most operations - code generally runs on the main thread. However, sometimes messages might be published from background threads, such as:</p>
+                    <ul>
+                        <li>Network message handlers</li>
+                        <li>Asset loading callbacks</li>
+                        <li>Background processing threads</li>
+                    </ul>
+                </div>
+
+                <p>SHBI can automatically ensure handlers are called on the main thread:</p>
+
+                <div class="code-container">
+                    <pre><code class="language-csharp">// Create a bus with async dispatch enabled
+var bus = MessageBusBuilder.Create()
+    .EnableAsyncDispatch()
+    .WithScope(myScope)
+    .Build();
+
+// Now publishing from any thread will be safe
+// The handler will execute on the main Unity thread</code></pre>
+                    <div class="code-actions">
+                        <button class="copy-code" title="Copy to clipboard"><i class="fas fa-copy"></i></button>
+                    </div>
+                </div>
+
+                <div class="story-block">
+                    <p>The async dispatcher uses Unity's <code>MonoBehaviour</code> timing system to ensure handlers run at an appropriate time in the frame.</p>
+                </div>
+
+                <h3 class="subsection">Handling Frame Timing</h3>
+                <div class="story-block warning">
+                    <p>While async dispatch ensures main thread execution, it doesn't guarantee when in the frame the handler will run. If you need specific frame timing (like after all updates but before rendering), consider:</p>
+                    <ol>
+                        <li>Using async dispatch to get to the main thread</li>
+                        <li>Then using your own timing mechanism (like <code>LateUpdate</code> or a custom manager) for the actual logic</li>
+                    </ol>
+                </div>
+            </section>
+
+            <section id="lifecycle-management">
+                <h2><i class="fas fa-recycle section-icon"></i> Lifecycle Management: Staying Memory Safe</h2>
+                <div class="story-block">
+                    <p>A common issue with event systems is memory leaks from forgotten subscriptions. SHBI provides several features to help manage the lifecycle of subscribers:</p>
+                </div>
+
+                <h3 class="subsection">Manual Subscription Management</h3>
+                <div class="story-block">
+                    <p>The most explicit approach is to subscribe in <code>OnEnable</code> and unsubscribe in <code>OnDisable</code>:</p>
+                </div>
+
+                <div class="code-container">
+                    <pre><code class="language-csharp">public class PlayerUI : MonoBehaviour
+{
+    private StandardMessageBus _messageBus;
+    
+    private void Awake()
+    {
+        _messageBus = BusManager.GetMessageBus(BusScope.UI);
+    }
+    
+    private void OnEnable()
+    {
+        _messageBus.Subscribe(OnPlayerHealthChanged);
+    }
+    
+    private void OnDisable()
+    {
+        _messageBus.Unsubscribe(OnPlayerHealthChanged);
+    }
+    
+    private void OnPlayerHealthChanged(PlayerHealthChangedMessage message)
+    {
+        UpdateHealthBar(message.CurrentHealth, message.MaxHealth);
+    }
+}</code></pre>
+                    <div class="code-actions">
+                        <button class="copy-code" title="Copy to clipboard"><i class="fas fa-copy"></i></button>
+                    </div>
+                </div>
+
+                <h3 class="subsection">Automatic Cleanup for MonoBehaviours</h3>
+                <div class="story-block highlight">
+                    <p>SHBI has built-in protection for MonoBehaviour subscribers:</p>
+                    <div class="code-container">
+                        <pre><code class="language-csharp">// Behind the scenes, SHBI tracks if MonoBehaviour subscribers
+// have been destroyed and automatically cleans them up</code></pre>
+                    </div>
+                    <p>This helps prevent memory leaks, but it's still good practice to manually unsubscribe for predictable behavior.</p>
+                </div>
+
+                <h3 class="subsection">Checking for Subscribers</h3>
+                <div class="story-block">
+                    <p>Before publishing important messages or making requests, you can check if anyone is listening:</p>
+                </div>
+
+                <div class="code-container">
+                    <pre><code class="language-csharp">if (messageBus.HasSubscribersFor<ImportantMessage>())
+{
+    messageBus.Publish(new ImportantMessage("Critical data"));
+}</code></pre>
+                    <div class="code-actions">
+                        <button class="copy-code" title="Copy to clipboard"><i class="fas fa-copy"></i></button>
+                    </div>
+                </div>
+
+                <div class="story-block info">
+                    <p>This helps avoid unnecessary message creation and processing when no one is listening.</p>
+                </div>
+            </section>
+
+            <section id="real-world-examples">
+                <h2><i class="fas fa-puzzle-piece section-icon"></i> Real-World Examples: Putting It All Together</h2>
+                <div class="story-block">
+                    <p>Let's explore some complete, real-world examples of using SHBI in a game:</p>
+                </div>
+
+                <h3 class="subsection">Example 1: Player Health System</h3>
+
+                <div class="tabbed-content">
+                    <div class="tab-headers">
+                        <button class="tab-button active" data-tab="health-message">Health Message</button>
+                        <button class="tab-button" data-tab="health-component">Health Component</button>
+                        <button class="tab-button" data-tab="ui-health-display">UI Health Display</button>
+                        <button class="tab-button" data-tab="game-manager">Game Manager</button>
+                    </div>
+                    <div class="tab-content">
+                        <div class="tab-pane active" id="health-message">
+                            <div class="code-container">
+                                <pre><code class="language-csharp">// Health message
+public class PlayerHealthChangedMessage : ScopedMessage
+{
+    public float CurrentHealth { get; }
+    public float MaxHealth { get; }
+    public bool IsDamage { get; }
+    
+    public PlayerHealthChangedMessage(float currentHealth, float maxHealth, bool isDamage)
+        : base(BusScope.Core, PropagationBehavior.UpAndDown)
+    {
+        CurrentHealth = currentHealth;
+        MaxHealth = maxHealth;
+        IsDamage = isDamage;
+    }
+}</code></pre>
+                                <div class="code-actions">
+                                    <button class="copy-code" title="Copy to clipboard"><i class="fas fa-copy"></i></button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="tab-pane" id="health-component">
+                            <div class="code-container">
+                                <pre><code class="language-csharp">// Health component
+public class PlayerHealth : MonoBehaviour
+{
+    [SerializeField] private float maxHealth = 100f;
+    private float currentHealth;
+    private StandardMessageBus _messageBus;
+    
+    private void Awake()
+    {
+        currentHealth = maxHealth;
+        _messageBus = BusManager.GetMessageBus(BusScope.Core);
+    }
+    
+    public void TakeDamage(float amount)
+    {
+        currentHealth = Mathf.Max(0, currentHealth - amount);
+        
+        // Publish health changed message
+        _messageBus.Publish(new PlayerHealthChangedMessage(
+            currentHealth, maxHealth, true));
+        
+        if (currentHealth <= 0)
+        {
+            Die();
+        }
+    }
+    
+    public void Heal(float amount)
+    {
+        float oldHealth = currentHealth;
+        currentHealth = Mathf.Min(maxHealth, currentHealth + amount);
+        
+        // Only publish if health actually changed
+        if (currentHealth > oldHealth)
+        {
+            _messageBus.Publish(new PlayerHealthChangedMessage(
+                currentHealth, maxHealth, false));
+        }
+    }
+    
+    private void Die()
+    {
+        _messageBus.Publish(new PlayerDiedMessage(gameObject.name, BusScope.Core, PropagationBehavior.UpToParent));
+    }
+}</code></pre>
+                                <div class="code-actions">
+                                    <button class="copy-code" title="Copy to clipboard"><i class="fas fa-copy"></i></button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="tab-pane" id="ui-health-display">
+                            <div class="code-container">
+                                <pre><code class="language-csharp">// UI health display
+public class HealthUI : MonoBehaviour
+{
+    [SerializeField] private Image healthBar;
+    [SerializeField] private ParticleSystem damageEffect;
+    private StandardMessageBus _messageBus;
+    
+    private void Awake()
+    {
+        _messageBus = BusManager.GetMessageBus(BusScope.UI);
+    }
+    
+    private void OnEnable()
+    {
+        // Listen on the UI bus for health messages that propagate up from Core
+        _messageBus.Subscribe(OnHealthChanged);
+    }
+    
+    private void OnDisable()
+    {
+        _messageBus.Unsubscribe(OnHealthChanged);
+    }
+    
+    private void OnHealthChanged(PlayerHealthChangedMessage message)
+    {
+        // Update health bar
+        float healthPercent = message.CurrentHealth / message.MaxHealth;
+        healthBar.fillAmount = healthPercent;
+        
+        // Play damage effect if it was damage
+        if (message.IsDamage && damageEffect != null)
+        {
+            damageEffect.Play();
+        }
+    }
+}</code></pre>
+                                <div class="code-actions">
+                                    <button class="copy-code" title="Copy to clipboard"><i class="fas fa-copy"></i></button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="tab-pane" id="game-manager">
+                            <div class="code-container">
+                                <pre><code class="language-csharp">// Game manager
+public class GameManager : MonoBehaviour
+{
+    private StandardMessageBus _messageBus;
+    
+    private void Awake()
+    {
+        _messageBus = BusManager.GetMessageBus(BusScope.Global);
+    }
+    
+    private void OnEnable()
+    {
+        // Listen for player death at the global level
+        _messageBus.Subscribe(OnPlayerDied);
+    }
+    
+    private void OnDisable()
+    {
+        _messageBus.Unsubscribe(OnPlayerDied);
+    }
+    
+    private void OnPlayerDied(PlayerDiedMessage message)
+    {
+        Debug.Log($"Player {message.PlayerName} has died! Game over!");
+        // Show game over screen, restart level, etc.
+    }
+}</code></pre>
+                                <div class="code-actions">
+                                    <button class="copy-code" title="Copy to clipboard"><i class="fas fa-copy"></i></button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <h3 class="subsection">Example 2: Inventory Request System</h3>
+
+                <div class="tabbed-content">
+                    <div class="tab-headers">
+                        <button class="tab-button active" data-tab="inventory-request">Inventory Request</button>
+                        <button class="tab-button" data-tab="inventory-system">Inventory System</button>
+                        <button class="tab-button" data-tab="shop-system">Shop System</button>
+                    </div>
+                    <div class="tab-content">
+                        <div class="tab-pane active" id="inventory-request">
+                            <div class="code-container">
+                                <pre><code class="language-csharp">// Inventory request message
+public class InventoryItemRequest : ScopedMessage
+{
+    public string ItemId { get; }
+    public int Quantity { get; }
+    
+    public InventoryItemRequest(string itemId, int quantity)
+        : base(BusScope.Core, PropagationBehavior.Local, requiresResponse: true)
+    {
+        ItemId = itemId;
+        Quantity = quantity;
+    }
+}
+
+// Request result
+public class InventoryRequestResult
+{
+    public bool Success { get; set; }
+    public string ErrorMessage { get; set; }
+    public int QuantityAvailable { get; set; }
+}</code></pre>
+                                <div class="code-actions">
+                                    <button class="copy-code" title="Copy to clipboard"><i class="fas fa-copy"></i></button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="tab-pane" id="inventory-system">
+                            <div class="code-container">
+                                <pre><code class="language-csharp">// Inventory system
+public class InventorySystem : MonoBehaviour
+{
+    private Dictionary<string, int> _inventory = new Dictionary<string, int>();
+    private StandardMessageBus _messageBus;
+    
+    private void Awake()
+    {
+        _messageBus = BusManager.GetMessageBus(BusScope.Core);
+        
+        // Initialize with some items
+        _inventory["Gold"] = 100;
+        _inventory["Potion"] = 5;
+        _inventory["Sword"] = 1;
+    }
+    
+    private void OnEnable()
+    {
+        _messageBus.Subscribe(HandleItemRequest);
+    }
+    
+    private void OnDisable()
+    {
+        _messageBus.Unsubscribe(HandleItemRequest);
+    }
+    
+    private void HandleItemRequest(InventoryItemRequest request)
+    {
+        var result = new InventoryRequestResult();
+        
+        if (_inventory.TryGetValue(request.ItemId, out int quantity))
+        {
+            result.QuantityAvailable = quantity;
+            
+            if (quantity >= request.Quantity)
+            {
+                result.Success = true;
+            }
+            else
+            {
+                result.Success = false;
+                result.ErrorMessage = "Not enough items";
+            }
+        }
+        else
+        {
+            result.Success = false;
+            result.ErrorMessage = "Item not found";
+            result.QuantityAvailable = 0;
+        }
+        
+        _messageBus.Respond(request, result);
+    }
+    
+    public void AddItem(string itemId, int quantity)
+    {
+        if (_inventory.ContainsKey(itemId))
+        {
+            _inventory[itemId] += quantity;
+        }
+        else
+        {
+            _inventory[itemId] = quantity;
+        }
+        
+        _messageBus.Publish(new InventoryChangedMessage(itemId, quantity, true));
+    }
+    
+    public void RemoveItem(string itemId, int quantity)
+    {
+        if (_inventory.TryGetValue(itemId, out int currentQuantity))
+        {
+            _inventory[itemId] = Mathf.Max(0, currentQuantity - quantity);
+            _messageBus.Publish(new InventoryChangedMessage(itemId, quantity, false));
+        }
+    }
+}</code></pre>
+                                <div class="code-actions">
+                                    <button class="copy-code" title="Copy to clipboard"><i class="fas fa-copy"></i></button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="tab-pane" id="shop-system">
+                            <div class="code-container">
+                                <pre><code class="language-csharp">// Shop system that uses inventory requests
+public class ShopSystem : MonoBehaviour
+{
+    private StandardMessageBus _messageBus;
+    
+    private void Awake()
+    {
+        _messageBus = BusManager.GetMessageBus(BusScope.Core);
+    }
+    
+    public async void TryPurchaseItem(string itemId, int cost, int quantity)
+    {
+        // First check if player has enough gold
+        try
+        {
+            var goldResult = await _messageBus.Request<InventoryItemRequest, InventoryRequestResult>(
+                new InventoryItemRequest("Gold", cost),
+                TimeSpan.FromSeconds(2)
+            );
+            
+            if (!goldResult.Success)
+            {
+                ShowError("Not enough gold to purchase!");
+                return;
+            }
+            
+            // Remove gold and add item
+            _messageBus.Publish(new RemoveItemMessage("Gold", cost));
+            _messageBus.Publish(new AddItemMessage(itemId, quantity));
+            
+            ShowPurchaseComplete();
+        }
+        catch (TimeoutException)
+        {
+            ShowError("Request timed out. Try again later.");
+        }
+    }
+    
+    private void ShowError(string message)
+    {
+        Debug.LogError(message);
+        // Show UI error message
+    }
+    
+    private void ShowPurchaseComplete()
+    {
+        Debug.Log("Purchase completed!");
+        // Show UI confirmation
+    }
+}</code></pre>
+                                <div class="code-actions">
+                                    <button class="copy-code" title="Copy to clipboard"><i class="fas fa-copy"></i></button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="debugging-tips">
+                <h2><i class="fas fa-bug section-icon"></i> Debugging Tips: When Things Go Wrong</h2>
+                <div class="story-block">
+                    <p>Even with a well-designed system, issues can arise. Here are some common problems and how to diagnose them:</p>
+                </div>
+
+                <div class="debugging-accordion">
+                    <div class="debug-item">
+                        <div class="debug-header">
+                            <h3><i class="fas fa-times-circle"></i> Problem: Message Not Being Received</h3>
+                            <span class="debug-toggle"><i class="fas fa-chevron-down"></i></span>
+                        </div>
+                        <div class="debug-content">
+                            <div class="debug-checklist">
+                                <h4>Checklist:</h4>
+                                <ol>
+                                    <li>Verify you're publishing and subscribing to the same message type (exact same class)</li>
+                                    <li>Check you're using the correct bus for the scope</li>
+                                    <li>Confirm the subscriber is active when the message is published</li>
+                                    <li>Ensure you haven't unsubscribed elsewhere</li>
+                                    <li>Verify the execution order (subscriber might be initializing after the message is sent)</li>
+                                </ol>
+                            </div>
+                            <div class="debug-solution">
+                                <h4>Debugging Steps:</h4>
+                                <div class="code-container">
+                                    <pre><code class="language-csharp">// Add logging to publishing
+Debug.Log($"Publishing {typeof(MyMessage).Name} to {bus.Scope.Name} bus");
+bus.Publish(new MyMessage());
+
+// Add logging to subscription
+Debug.Log($"Subscribing to {typeof(MyMessage).Name} on {bus.Scope.Name} bus");
+bus.Subscribe(OnMessage);
+
+// Check if there are any subscribers
+Debug.Log($"Has subscribers for {typeof(MyMessage).Name}: {bus.HasSubscribersFor<MyMessage>()}");</code></pre>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="debug-item">
+                        <div class="debug-header">
+                            <h3><i class="fas fa-times-circle"></i> Problem: Message Not Propagating</h3>
+                            <span class="debug-toggle"><i class="fas fa-chevron-down"></i></span>
+                        </div>
+                        <div class="debug-content">
+                            <div class="debug-checklist">
+                                <h4>Checklist:</h4>
+                                <ol>
+                                    <li><strong>Verify the message's scope matches the bus's scope</strong> (most common issue!)</li>
+                                    <li>Confirm the parent-child relationship between buses is properly established</li>
+                                    <li>Check that the propagation behavior is set correctly</li>
+                                    <li>Ensure parent/child buses exist and are accessible</li>
+                                </ol>
+                            </div>
+                            <div class="debug-solution">
+                                <h4>Debugging Steps:</h4>
+                                <div class="code-container">
+                                    <pre><code class="language-csharp">// Verify bus hierarchy
+Debug.Log($"Parent bus: {childBus.ParentBus?.Scope.Name ?? "None"}");
+
+// Check message scope
+Debug.Log($"Message scope: {message.Scope.Name}, Bus scope: {bus.Scope.Name}");
+
+// Print full hierarchy path
+void PrintScopePath(BusScope scope)
+{
+    var path = new List<string>();
+    var current = scope;
+    
+    while (current != null)
+    {
+        path.Add(current.Name);
+        current = current.Parent;
+    }
+    
+    path.Reverse();
+    Debug.Log($"Scope path: {string.Join(" -> ", path)}");
+}</code></pre>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="debug-item">
+                        <div class="debug-header">
+                            <h3><i class="fas fa-times-circle"></i> Problem: Request Times Out</h3>
+                            <span class="debug-toggle"><i class="fas fa-chevron-down"></i></span>
+                        </div>
+                        <div class="debug-content">
+                            <div class="debug-checklist">
+                                <h4>Checklist:</h4>
+                                <ol>
+                                    <li>Verify at least one handler is subscribed</li>
+                                    <li>Ensure the handler is actually calling <code>Respond</code></li>
+                                    <li>Check that the message has <code>requiresResponse: true</code></li>
+                                    <li>Make sure the timeout is appropriate for the operation</li>
+                                </ol>
+                            </div>
+                            <div class="debug-solution">
+                                <h4>Debugging Steps:</h4>
+                                <div class="code-container">
+                                    <pre><code class="language-csharp">// Before making a request
+Debug.Log($"Has handler for request: {bus.HasSubscribersFor<MyRequest>()}");
+
+// In the handler
+void HandleRequest(MyRequest request)
+{
+    Debug.Log($"Handling request: {request.MessageId}");
+    
+    // Process...
+    
+    Debug.Log($"Sending response for: {request.MessageId}");
+    bus.Respond(request, response);
+}</code></pre>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="debug-item">
+                        <div class="debug-header">
+                            <h3><i class="fas fa-times-circle"></i> Problem: Memory Leaks</h3>
+                            <span class="debug-toggle"><i class="fas fa-chevron-down"></i></span>
+                        </div>
+                        <div class="debug-content">
+                            <div class="debug-checklist">
+                                <h4>Checklist:</h4>
+                                <ol>
+                                    <li>Ensure all subscribers are unsubscribing when appropriate</li>
+                                    <li>Check for static event handlers that might persist</li>
+                                    <li>Verify MonoBehaviours are properly implementing OnDisable/OnDestroy</li>
+                                </ol>
+                            </div>
+                            <div class="debug-solution">
+                                <h4>Debugging Steps:</h4>
+                                <div class="code-container">
+                                    <pre><code class="language-csharp">// Add a destructor to detect when objects are garbage collected
+~MyClass()
+{
+    Debug.Log($"MyClass instance being garbage collected");
+}
+
+// Count subscribers before and after operations
+Debug.Log($"Subscriber count before: {CountSubscribers()}");
+// Operation that might cause leak
+Debug.Log($"Subscriber count after: {CountSubscribers()}");</code></pre>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="performance-optimization">
+                <h2><i class="fas fa-tachometer-alt section-icon"></i> Performance Optimization: Scaling Up</h2>
+                <div class="story-block">
+                    <p>As your project grows, performance may become a concern. Here are some strategies for optimizing SHBI:</p>
+                </div>
+
+                <h3 class="subsection">Message Pooling</h3>
+                <div class="story-block">
+                    <p>For high-frequency messages, consider implementing a message pool:</p>
+                </div>
+
+                <div class="code-container">
+                    <pre><code class="language-csharp">public class VectorMessagePool
+{
+    private readonly Queue<VectorMessage> _pool = new Queue<VectorMessage>();
+    private readonly object _lock = new object();
+    
+    public VectorMessage Get(Vector3 value)
+    {
+        lock (_lock)
+        {
+            if (_pool.Count > 0)
+            {
+                var message = _pool.Dequeue();
+                message.Value = value;
+                return message;
+            }
+        }
+        
+        return new VectorMessage(value);
+    }
+    
+    public void Return(VectorMessage message)
+    {
+        lock (_lock)
+        {
+            _pool.Enqueue(message);
+        }
+    }
+}
+
+// Usage
+var pool = new VectorMessagePool();
+var message = pool.Get(transform.position);
+bus.Publish(message);
+pool.Return(message);</code></pre>
+                    <div class="code-actions">
+                        <button class="copy-code" title="Copy to clipboard"><i class="fas fa-copy"></i></button>
+                    </div>
+                </div>
+
+                <h3 class="subsection">Batching Messages</h3>
+                <div class="story-block">
+                    <p>For systems that generate many messages, consider batching them:</p>
+                </div>
+
+                <div class="code-container">
+                    <pre><code class="language-csharp">public class BatchedTransformMessage : BaseMessage
+{
+    public List<(int EntityId, Vector3 Position, Quaternion Rotation)> Updates { get; }
+    
+    public BatchedTransformMessage()
+    {
+        Updates = new List<(int, Vector3, Quaternion)>();
+    }
+    
+    public void AddUpdate(int entityId, Vector3 position, Quaternion rotation)
+    {
+        Updates.Add((entityId, position, rotation));
+    }
+}
+
+// Usage
+var batch = new BatchedTransformMessage();
+
+foreach (var entity in entities)
+{
+    if (entity.HasMoved)
+    {
+        batch.AddUpdate(entity.Id, entity.Position, entity.Rotation);
+    }
+}
+
+if (batch.Updates.Count > 0)
+{
+    bus.Publish(batch);
+}</code></pre>
+                    <div class="code-actions">
+                        <button class="copy-code" title="Copy to clipboard"><i class="fas fa-copy"></i></button>
+                    </div>
+                </div>
+
+                <h3 class="subsection">Disabling Features You Don't Need</h3>
+                <div class="story-block">
+                    <p>The SHBI system has several features that can be disabled if not needed:</p>
+                </div>
+
+                <div class="code-container">
+                    <pre><code class="language-csharp">var optimizedBus = MessageBusBuilder.Create()
+    // Don't use priority sorting if order doesn't matter
+    .WithPrioritySupport(false)
+    // Disable async dispatch if all your code runs on the main thread
+    .EnableAsyncDispatch(false)
+    // Disable advanced logging in production builds
+    .WithAdvancedLogging(false)
+    .WithScope(myScope)
+    .Build();</code></pre>
+                    <div class="code-actions">
+                        <button class="copy-code" title="Copy to clipboard"><i class="fas fa-copy"></i></button>
+                    </div>
+                </div>
+
+                <h3 class="subsection">Limiting Propagation</h3>
+                <div class="story-block">
+                    <p>Be judicious about which messages propagate and how far:</p>
+                </div>
+
+                <div class="code-container">
+                    <pre><code class="language-csharp">// Instead of UpAndDown propagation for everything,
+// be specific about what really needs to travel
+bus.Publish(new CriticalMessage("Important", scope, PropagationBehavior.UpAndDown));
+bus.Publish(new StandardMessage("Normal", scope, PropagationBehavior.Local));</code></pre>
+                    <div class="code-actions">
+                        <button class="copy-code" title="Copy to clipboard"><i class="fas fa-copy"></i></button>
+                    </div>
+                </div>
+
+                <h3 class="subsection">Filtering Messages Before Creation</h3>
+                <div class="story-block">
+                    <p>Sometimes it's better to check conditions before creating and publishing a message:</p>
+                </div>
+
+                <div class="code-container">
+                    <pre><code class="language-csharp">// Instead of this:
+bus.Publish(new TransformChangedMessage(transform.position));
+
+// Do this:
+if (Vector3.Distance(lastPublishedPosition, transform.position) > threshold)
+{
+    lastPublishedPosition = transform.position;
+    bus.Publish(new TransformChangedMessage(transform.position));
+}</code></pre>
+                    <div class="code-actions">
+                        <button class="copy-code" title="Copy to clipboard"><i class="fas fa-copy"></i></button>
+                    </div>
+                </div>
+            </section>
+
+            <section id="best-practices">
+                <h2><i class="fas fa-check-double section-icon"></i> Best Practices and Common Pitfalls</h2>
+                <div class="story-block">
+                    <p>To wrap up, here are some best practices and common pitfalls to avoid:</p>
+                </div>
+
+                                    <div class="dual-columns">
+                    <div class="column">
+                        <h3><i class="fas fa-thumbs-up"></i> Best Practices</h3>
+                        <div class="practice-item">
+                            <h4>1. Organize by Domain</h4>
+                            <ul>
+                                <li>Create scopes that match your logical domains</li>
+                                <li>Keep related messages within the appropriate scope</li>
+                            </ul>
+                        </div>
+                        <div class="practice-item">
+                            <h4>2. Design Clear Message Contracts</h4>
+                            <ul>
+                                <li>Include all necessary data in the message</li>
+                                <li>Use descriptive names that indicate the event or action</li>
+                                <li>Consider making messages immutable</li>
+                            </ul>
+                        </div>
+                        <div class="practice-item">
+                            <h4>3. Handle Lifecycle Properly</h4>
+                            <ul>
+                                <li>Subscribe in OnEnable/OnStart</li>
+                                <li>Unsubscribe in OnDisable/OnDestroy</li>
+                                <li>Be mindful of static subscribers</li>
+                            </ul>
+                        </div>
+                        <div class="practice-item">
+                            <h4>4. Use the Right Tool for the Job</h4>
+                            <ul>
+                                <li>Use events for notifications</li>
+                                <li>Use messages for commands or requests</li>
+                                <li>Use request-response for operations that need a reply</li>
+                            </ul>
+                        </div>
+                        <div class="practice-item">
+                            <h4>5. Document Your Message Flow</h4>
+                            <ul>
+                                <li>Maintain documentation of your message types</li>
+                                <li>Document which systems publish and subscribe to which messages</li>
+                                <li>Create diagrams of your scope hierarchy</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="column">
+                        <h3><i class="fas fa-thumbs-down"></i> Common Pitfalls</h3>
+                        <div class="pitfall-item">
+                            <h4>1. Scope Mismatch for Propagation</h4>
+                            <ul>
+                                <li><strong>Always ensure the message's scope matches the bus's scope for propagation to work</strong></li>
+                                <li>This is the #1 cause of propagation issues</li>
+                            </ul>
+                        </div>
+                        <div class="pitfall-item">
+                            <h4>2. Circular Dependencies</h4>
+                            <ul>
+                                <li>Be cautious about systems that respond to each other's messages</li>
+                                <li>This can create hard-to-detect circular dependencies</li>
+                            </ul>
+                        </div>
+                        <div class="pitfall-item">
+                            <h4>3. Overusing Propagation</h4>
+                            <ul>
+                                <li>Don't make every message propagate everywhere</li>
+                                <li>Be intentional about message flow</li>
+                            </ul>
+                        </div>
+                        <div class="pitfall-item">
+                            <h4>4. Not Checking for Subscribers</h4>
+                            <ul>
+                                <li>For critical operations, check if there are subscribers before publishing</li>
+                                <li>Handle the case where no one is listening</li>
+                            </ul>
+                        </div>
+                        <div class="pitfall-item">
+                            <h4>5. Message Overload</h4>
+                            <ul>
+                                <li>Don't create too many message types</li>
+                                <li>Group related data in single messages</li>
+                                <li>Consider frequency and payload size for performance-critical systems</li>
+                            </ul>
+                        </div>
+                        <div class="pitfall-item">
+                            <h4>6. Parent-Child Relationship Errors</h4>
+                            <ul>
+                                <li>Ensure buses are properly connected in parent-child relationships</li>
+                                <li>This is crucial for propagation to work correctly</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="story-block highlight">
+                    <p>By following these guidelines and understanding the inner workings of SHIVA, you'll be able to create a clean, decoupled, and maintainable communication architecture for your Unity application.</p>
+                </div>
+
+                <div class="conclusion">
+                    <h3><i class="fas fa-flag-checkered"></i> Conclusion</h3>
+                    <p>The SHIVA system offers a powerful way to organize and manage communication in your Unity projects. By understanding its concepts and features, you can create applications that are:</p>
+                    <ul class="conclusion-list">
+                        <li><i class="fas fa-tools"></i> Easier to maintain</li>
+                        <li><i class="fas fa-puzzle-piece"></i> More modular</li>
+                        <li><i class="fas fa-sitemap"></i> Better organized</li>
+                        <li><i class="fas fa-shield-alt"></i> More robust</li>
+                    </ul>
+                    <p>Remember that effective communication is at the heart of well-designed software. SHIVA gives you the tools to make that communication clear, organized, and reliable.</p>
+                    <p class="farewell">Happy coding!</p>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <footer>
+        <div class="footer-content">
+            <div class="footer-logo">
+                <svg id="footer-bus-logo" width="30" height="30" viewBox="0 0 200 200">
+                    <circle cx="100" cy="100" r="90" fill="none" stroke="var(--accent-color)" stroke-width="6"/>
+                    <path class="bus-path" d="M50,100 Q100,50 150,100 T50,100" fill="none" stroke="var(--accent-color)" stroke-width="6"/>
+                    <circle class="node" cx="50" cy="100" r="10" fill="var(--accent-color)"/>
+                    <circle class="node" cx="100" cy="50" r="10" fill="var(--accent-color)"/>
+                    <circle class="node" cx="150" cy="100" r="10" fill="var(--accent-color)"/>
+                    <circle class="node" cx="100" cy="150" r="10" fill="var(--accent-color)"/>
+                </svg>
+                <span>SHIVA</span>
+            </div>
+            <p>Scoped Hierarchical Infrastructure for Versatile Architecture &copy; 2025 - A friendly guide to organized messaging in Unity</p>
+            <div class="footer-links">
+                <a href="#the-communication-problem" class="footer-link">Get Started</a>
+                <a href="#best-practices" class="footer-link">Best Practices</a>
+                <a href="#real-world-examples" class="footer-link">Examples</a>
+            </div>
+        </div>
+    </footer>
+
+    <div id="back-to-top">
+        <i class="fas fa-chevron-up"></i>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
